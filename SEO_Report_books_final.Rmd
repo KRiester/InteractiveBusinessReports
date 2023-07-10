@@ -1,0 +1,376 @@
+---
+#title: "Books"
+#author: "Team 8 - Bahizire, Vanessa. Franco, Justine. Furlani, Sara. Riester, Kilian Werner Martin. Sankhala, G. Yash."
+output:
+  tufte::tufte_html: default
+---
+```{r, include=FALSE}
+# Load required libraries
+library(ggplot2)
+library(plotly)
+library(tidyverse)
+library(tidytext)
+library(wordcloud)
+library(wordcloud2)
+library(RColorBrewer)
+library(DT)
+```
+
+<style>
+body {
+    background-color: white;
+  }
+.center-slide-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: left;
+  align-items: left;
+  height: 100%;
+  text-align: left;
+}
+
+.center-slide-content h1 {
+  margin-top: 0%;
+  font-size: 48px; /* Adjust the font size as desired */
+  font-family: "Times New Roman", serif; /* Add additional font style properties if needed */
+  text-transform: none;
+  color: Brown; /* Specify the desired text color without quotes */
+  line-height: 1;
+}
+
+.center-slide-content h3 {
+  color: #000000; /* Specify the desired text color for paragraphs and headings */
+  font-family: "Arial", sans-serif; /* Add additional font style properties if needed */
+  line-height: 10px;
+}
+</style>
+
+<div class="center-slide-content">
+  <h1>Unleashing an Innovative SEO Paradigm for Sales Growth</h1>
+  <h3 style="font-size: 36px">Fresh Minds Press</h3>
+  <h3 style="font-size: 14px">Team 8 - Bahizire, Vanessa. Franco, Justine. Furlani, Sara. Riester, Kilian Werner Martin. Sankhala, G. Yash.</h3>
+</div>
+
+#
+<h1 style="font-size: 48px; font-family: 'Times New Roman', serif; color: brown; text-transform: capitalize;"> Introduction </h1>
+</n>
+
+</n>
+Fresh Minds Press is a US-based publishing company that has experienced a decline in sales over the past two years.
+</n>
+
+![Figure 1, Own representation](/Users/kilianriester/Documents/Coding/R_Hult/Team_Assignment/goals.jpeg)
+</n>
+</n>
+In this graph, we can see the evolution of book sales in the U.S. from 1992 to 2022 with a sales growth since 2021.
+
+</n>
+![Figure 2, Source: Publishers Weekly(2023)](/Users/kilianriester/Documents/Coding/R_Hult/Team_Assignment/statistic.jpeg)
+
+```{r, echo=FALSE}
+# Create the data
+years <- c(2018, 2019, 2020, 2021, 2022)
+sales <- c(100090, 101380, 106780, 88530, 79450)
+```
+
+</n>
+We discovered the book sales for Fresh Minds Press from 2018 to 2022. Each bar represents the number of books sold in a given year.
+The graph shows a fluctuation in sales over the years, with a decline since 2021.
+</n>
+
+```{r, echo=FALSE}
+# Generate a range of beige colors
+n <- length(years)
+beige_palette <- colorRampPalette(c("#F5F5DC", "#D2B48C"))(n)
+
+# Create the bar chart with different shades of beige shadows
+fig <- plot_ly(x = years, y = sales, type = "bar",
+               marker = list(color = beige_palette,
+                             line = list(color = "black")),
+               hovertemplate = "Year: %{x}<br>Book Sales: %{y}<extra></extra>")
+
+# Customize layout with modified margin
+fig <- fig %>% layout(
+  xaxis = list(title = "Year", titlefont = list(size = 24)),
+  yaxis = list(title = "Book Sales", titlefont = list(size = 24)),
+  title = list(text = "Book Sales in Fresh Mind Press (2018-2022)", font = list(size = 24)),
+  plot_bgcolor = "rgba(0, 0, 0, 0)",  # Transparent background
+  paper_bgcolor = "rgba(0, 0, 0, 0)",  # Transparent paper background
+  margin = list(l = 100, r = 100, t = 100, b = 100)  # Adjust margin size here
+)
+
+# Display the interactive chart
+fig
+```
+
+</n>
+<h1 style="font-size: 48px; font-family: 'Times New Roman', serif; color: brown; text-transform: none;"> Exploring the Textual Landscape </h1>
+</n>
+
+```{r, echo=FALSE, include=FALSE}
+load(file = "booksbooks50threads.rda")
+str(threads_df)
+
+# tidy table: text column to unite thread's title, text, and comments
+threads_tbl <- as_tibble(threads_df) %>%
+  unite(title, text, text_comments, col = "text", sep = " ")
+threads_tbl
+threads_tbl$text[1]
+
+# tokenization:
+# unnest_tokens removes punctuation, converts text to lower case
+threads_words <- threads_tbl %>%
+  unnest_tokens(word, text) %>%
+  # omit most rare words: keep those occurring more than 10 times
+  group_by(word) %>%
+  filter(n() > 10) %>%
+  ungroup()
+threads_words
+
+# remove stop words (corpus available within tidytext)
+head(stop_words$word)
+threads_words_clean <- threads_words %>%
+  filter(!word %in% stop_words$word) %>%
+  filter(!is.na(word))
+threads_words_clean
+
+# term frequency (tf)
+threads_words_count <- threads_words_clean %>% count(word, sort = TRUE)
+threads_words_count
+
+
+# plot terms with frequencies exceeding a threshold
+# Remove specific words
+words_to_remove <- c("book", "books", "read")
+threads_words_count <- threads_words_count %>%
+  filter(!word %in% words_to_remove)
+```
+
+</n>
+By analyzing the term frequency, we have discovered that the most frequent words are "people", "time", "love", and "story". They provide an idea about readers' preferences.
+</n>
+
+```{r, echo=FALSE}
+nmin <- 500
+plot_frequency <- threads_words_count %>%
+  filter(n > nmin) %>%
+  mutate(word = reorder(word, n)) %>%
+  filter(!word %in% words_to_remove) %>%
+  ggplot(aes(word, n, fill=n)) +
+  geom_col(show.legend = FALSE) +
+  xlab(NULL) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_flip() +
+  scale_fill_gradient(low = "beige", high = "brown") +
+  theme_classic(base_size = 12) +
+  labs(y="Count", subtitle=paste("n >", nmin)) +
+  theme(plot.title = element_text(lineheight=.8, face="bold")) +
+  theme_minimal()
+
+ggplotly(plot_frequency, tooltip = "y")
+```
+
+</n>
+
+Dataset Exploration
+
+```{r, echo=FALSE}
+datatable(threads_words_count)
+```
+</n>
+
+#
+<h1 style="font-size: 48px; font-family: 'Times New Roman', serif; color: brown; text-transform: none;"> Wordcloud </h1>
+</n>
+
+```{r, echo=FALSE}
+n_colors <- 100  # Number of colors in the palette
+
+# Define custom tan color palette
+colors <- colorRampPalette(rev(c("#D2B48C", "#A67D5C", "#8B4513")))(n_colors)
+
+wordcloud2(threads_words_count[1:100, ], size = 1, color = colors,
+           backgroundColor = "transparent", shape = "circle")
+```
+
+```{r, echo = FALSE, include=FALSE}
+# tf-idf
+# https://www.tidytextmining.com/tfidf.html
+# NOTE: url plays a role of a unique thread identifier for idf computation
+threads_words_tf_idf <- threads_words_clean %>%
+  count(url, word, sort = TRUE) %>%
+  bind_tf_idf(word, url, n) %>%
+  group_by(word) %>% 
+  summarise(tf_idf_sum = sum(tf_idf)) %>%
+  arrange(desc(tf_idf_sum))
+threads_words_tf_idf
+```
+
+</n>
+
+<h1 style="font-size: 48px; font-family: 'Times New Roman', serif; color: brown; text-transform: none;"> General Importance of Themes </h1>
+
+</n>
+The in general most relevant topics that are discussed currently are "veteran", "translation", "ai", and "lovecraft". 
+</n>
+What in the message that these words tell us is different from the overall frequency?
+</n>
+
+```{r, echo=FALSE}
+plot_gi <- threads_words_tf_idf %>%
+  top_n(15, tf_idf_sum) %>% 
+  rename(frequency = tf_idf_sum) %>% 
+  ggplot(aes(reorder(word, frequency), frequency, fill = frequency)) +  # add fill = frequency to apply color gradient based on frequency
+  scale_y_continuous(expand = c(0, 0)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_gradient(low = "beige", high = "brown") +  # beige to brown color gradient
+  labs(x = NULL, y = "General Importance Index") +
+  coord_flip() +
+  theme_classic(base_size = 12) +
+  labs(subtitle="Top words overall",
+       x= NULL, 
+       y= "General Importance Index") +
+  theme(plot.title = element_text(lineheight=.8, face="bold")) +
+  theme_minimal()
+
+ggplotly(plot_gi, tooltip = "y")
+```
+
+</n>
+
+<h1 style="font-size: 48px; font-family: 'Times New Roman', serif; color: brown; text-transform: none;"> Explaining Inverse Frequency </h1>
+
+</n>
+To account for relevance across the text corpus in the thread "books" in reddit we used the term frequency - inverse document frequency TF-IDF.
+The words veteran, translation, ai, and lovecraft were relevant across all threads. In the case of Lana Del Rey who was named a lot in specific threads the overall importance is still high because the topic was discussed intensely even though not across all topics. In relation to the word "the" which does not help us to analyse the sentiment of the topic "books". 
+</n>
+
+![Figure 3, Own representation. Inverse Frequency)](/Users/kilianriester/Documents/Coding/R_Hult/Team_Assignment/if_image.jpeg)
+
+</n>
+Dataset Exploration
+</n>
+
+```{r, echo=FALSE}
+datatable(threads_words_tf_idf)
+```
+
+</n>
+
+<h1 style="font-size: 48px; font-family: 'Times New Roman', serif; color: brown; text-transform: none;"> Discovering Literary Worlds: Unveiling Prolific Authors and Captivating Genres </h1>
+
+</n>
+The presence of words like “lovestory" and "sci-fi" indicates that these genres are frequently associated with books. We can see that books like Harry Potter or such that are related to fantasy, love stories, science fiction, and works by Stephen King have significance for SEO keywords and a potential demand for future online and physical book sales.   
+</n>
+
+```{r, echo = FALSE, include=FALSE}
+threads_bigram <- threads_tbl %>%
+  unnest_tokens(bigram, text, token = "ngrams", n = 2) %>%
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word,
+         !word2 %in% stop_words$word,
+         !is.na(word1)) %>%
+  count(word1, word2, sort = TRUE)
+threads_bigram
+```
+
+```{r, echo = FALSE}
+plot_bigram <- threads_bigram %>%
+  top_n(15, n) %>% 
+  mutate(bigram = reorder(paste(word1, word2), n)) %>%
+  ggplot(aes(x = bigram, y = n, fill = n)) +  # add fill = n to apply color gradient based on n
+  scale_y_continuous(expand = c(0, 0)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  theme_classic(base_size = 12) +
+  scale_fill_gradient(low = "beige", high = "brown") +  # beige to brown color gradient
+  labs(title="", 
+       subtitle="Total counts in all documents",
+       x= NULL, 
+       y= "Count") +
+  theme(plot.title = element_text(lineheight=.8, face="bold")) + 
+  theme_minimal()
+
+ggplotly(plot_bigram, tooltip = c("x", "y"))
+```
+
+</n>
+Dataset Exploration
+</n>
+
+```{r, echo=FALSE, warning=FALSE}
+datatable(threads_bigram)
+```
+
+</n>
+We have words like "Lana Del Rey", "Edgar Allan Poe". These words show that there is a diverse range of interests among book readers. People are interested in a variety of genres, from classic literature to contemporary books.
+</n>
+
+```{r, echo = FALSE, include=FALSE}
+threads_trigram <- threads_tbl %>%
+  unnest_tokens(trigram, text, token = "ngrams", n = 3) %>%
+  separate(trigram, c("word1", "word2", "word3"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word,
+         !word2 %in% stop_words$word,
+         !word3 %in% stop_words$word,  
+         !is.na(word1)) %>%
+  count(word1, word2, word3, sort = TRUE)
+threads_trigram
+```
+
+
+```{r, echo=FALSE}
+plot_trigram <- threads_trigram %>%
+  top_n(15, n) %>% 
+  ggplot(aes(reorder(paste(word1, word2, word3), n), n, fill=n)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  scale_fill_gradient(low = "beige", high = "brown") +
+  theme_classic(base_size = 12) +
+  labs(title="", 
+       subtitle="Total counts in all documents",
+       x= NULL, 
+       y= "Count") +
+  theme(plot.title = element_text(lineheight=.8, face="bold"))
+
+ggplotly(plot_trigram, tooltip = "y")
+```
+
+</n>
+Dataset Exploration
+</n>
+
+```{r, echo=FALSE, warning=FALSE}
+datatable(threads_trigram)
+```
+
+</n>
+
+<h1 style="font-size: 48px; font-family: 'Times New Roman', serif; color: brown; text-transform: none;"> Conclusion and Recommendations </h1>
+<h4 style="font-size: 20px; font-family: 'Times New Roman', serif; color: brown; text-transform: none;"> Embracing the Power of Emotion and Curiosity: Our Future Strategy </h4>
+
+</n>
+In conclusion, our future SEO strategy is focused on terms related to and include romance, science fiction, and thriller genres, complemented by an enriched collection of works by Edgar Allan Poe and Stephen King.
+
+With the keywords and themes implemented we enhance future online engagement as well as sales.
+</n>
+
+#
+![](/Users/kilianriester/Documents/Coding/R_Hult/Team_Assignment/Conclusion.jpeg)
+</n>
+<h1 style="font-size: 48px; font-family: 'Times New Roman', serif; color: brown; text-transform: none;"> References </h1>
+
+</n>
+Publishers Weekly. (February 17, 2023). Book store sales in the United States from 1992 to 2022 (in billion U.S. dollars) [Graph]. In Statista. Retrieved July 10, 2023, from https://www-statista-com.hult.idm.oclc.org/statistics/197710/annual-book-store-sales-in-the-us-since-1992/
+</n>
+
+</n>
+Reddit - dive into anything. (n.d.). Reddit.com. Retrieved July 10, 2023, from https://www.reddit.com/r/books/
+</n>
+
+</n>
+Paramonov, P. (2023). hult-inter-bus-reports-r: Building Interactive Business Reports with R course at Hult Business School. Retrieved July 10, 2023, from https://github.com/multidis/hult-inter-bus-reports-r
+</n>
+
+
